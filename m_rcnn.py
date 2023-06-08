@@ -158,15 +158,7 @@ class CustomDataset(utils.Dataset):
                 )
 
     def load_mask(self, image_id):
-        """ Load instance masks for the given image.
-        MaskRCNN expects masks in the form of a bitmap [height, width, instances].
-        Args:
-            image_id: The id of the image to load masks for
-        Returns:
-            masks: A bool array of shape [height, width, instance count] with
-                one mask per instance.
-            class_ids: a 1D array of class IDs of the instance masks.
-        """
+
         image_info = self.image_info[image_id]
         annotations = image_info['annotations']
         instance_masks = []
@@ -210,9 +202,7 @@ def load_training_model(config):
     if init_with == "imagenet":
         model.load_weights(model.get_imagenet_weights(), by_name=True)
     elif init_with == "coco":
-        # Load weights trained on MS COCO, but skip layers that
-        # are different due to the different number of classes
-        # See README for instructions to download the COCO weights
+
         print(COCO_MODEL_PATH)
         model.load_weights(COCO_MODEL_PATH, by_name=True,
                            exclude=["mrcnn_class_logits", "mrcnn_bbox_fc",
@@ -240,18 +230,11 @@ def load_image_dataset(annotation_path, dataset_path, dataset_type):
     return dataset_train
 
 
-# Train the head branches
-# Passing layers="heads" freezes all layers except the head
-# layers. You can also pass a regular expression to select
-# which layers to train by name pattern.
 def train_head(model, dataset_train, dataset_val, config):
     model.train(dataset_train, dataset_val,
             learning_rate=config.LEARNING_RATE,
             epochs=30,
             layers='heads')
-
-
-""" DETECTION TEST YOUR MODEL """
 
 class InferenceConfig(CustomConfig):
     GPU_COUNT = 1
@@ -310,26 +293,6 @@ def load_inference_model(num_classes, model_path):
     print("Loading weights from ", model_path)
     model.load_weights(model_path, by_name=True)
     return model, inference_config, class_names
-
-    """
-    inference_config = InferenceConfig(num_classes)
-
-    # Recreate the model in inference mode
-    model = modellib.MaskRCNN(mode="inference",
-                              config=inference_config,
-                              model_dir=model_path)
-
-    # Get path to saved weights
-    # Either set a specific path or find last trained weights
-    # model_path = os.path.join(ROOT_DIR, ".h5 file name here")
-    #model_path = model.find_last()
-
-    # Load trained weights
-    print("Loading weights from ", model_path)
-    model.load_weights(model_path, by_name=True)
-    return model, inference_config
-    """
-
 
 def test_random_image(test_model, dataset_val, inference_config):
     image_id = random.choice(dataset_val.image_ids)
